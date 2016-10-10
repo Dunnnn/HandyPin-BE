@@ -10,7 +10,6 @@ import datetime
 from .. import app
 
 #TODO Hard coded here for now, will be placed somewhere else in the future
-app.config['SQLALCHEMY_DATABASE_URI'] = 'uri:postgres://postgres:handypin@handypin.c37rymkezk94.us-east-1.rds.amazonaws.com:5432/handypin'
 db = SQLAlchemy(app)
 
 make_searchable(options={'regconfig': 'pg_catalog.simple'})
@@ -47,13 +46,13 @@ class TableTemplate():
 class User(TableTemplate, db.Model, CRUD):
     query_class = UserQuery
 
-    id                       = db.Column(db.Integer, primary_key=True)
-    username                 = db.Column(db.String(20), unique=True, nullable=False)
-    password                 = db.Column(db.String(20), nullable=False)
-    email                    = db.Column(db.String(120), unique=True, nullable=False)
+    id        = db.Column(db.Integer, primary_key=True)
+    username  = db.Column(db.String(20), unique=True, nullable=False)
+    password  = db.Column(db.String(20), nullable=False)
+    email     = db.Column(db.String(120), unique=True, nullable=False)
     
     #Seach Vector
-    search_vector = db.Column(TSVectorType('username'))
+    search_vector = db.Column(TSVectorType('username', 'email'))
 
     def get_id(self):
         return unicode(self.id)
@@ -61,6 +60,18 @@ class User(TableTemplate, db.Model, CRUD):
     def get_email(self):
         return self.email;
 
+    #Functions reserved for login manager
+    def is_active(self):
+            return self.is_active;
+
+    def is_authenticated(self):
+        return True
+
+    def is_anonymous(self):
+        return False
+
+    def get_id(self):
+        return unicode(self.id)
 
 class Pin(TableTemplate, db.Model, CRUD):
     id          = db.Column(db.Integer, primary_key=True)
@@ -71,11 +82,10 @@ class Pin(TableTemplate, db.Model, CRUD):
     owner_id       = db.Column(db.Integer, db.ForeignKey('user.id'))
 
     #Relationships
-    user   = db.relationship('User', backref=db.backref('pin'))
+    owner = db.relationship('User', backref=db.backref('pin'))
 
     #Seach Vector
-    search_vector = db.Column(TSVectorType('short_title'))
-
+    search_vector = db.Column(TSVectorType('title', 'description', 'short_title'))
 
 
 class Vote(db.Model, CRUD):
@@ -85,8 +95,8 @@ class Vote(db.Model, CRUD):
     Vote        = db.Column(db.Boolean, nullable=False)
     
     #Relationships
-    user   = db.relationship('User', backref=db.backref('vote'))
-    pin     = db.relationship('Pin', backref=db.backref('votes'))
+    user = db.relationship('User', backref=db.backref('votes'))
+    pin  = db.relationship('Pin', backref=db.backref('votes'))
 
     #Constraints
     __table_args__ = (
@@ -107,10 +117,8 @@ class PinTag(db.Model, CRUD):
     tag_id  = db.Column(db.Integer, db.ForeignKey('tag.id'),nullable = False)
 
     #Relationships
-    #Relationships
-    tag   = db.relationship('Tag')
-    pin    = db.relationship('Pin', backref=db.backref('tags'))
-
+    tag = db.relationship('Tag')
+    pin = db.relationship('Pin', backref=db.backref('tags'))
 
     #Constraints
     __table_args__ = (
@@ -125,8 +133,8 @@ class Comment(TableTemplate, db.Model, CRUD):
     content                  = db.Column(db.String(120), nullable = False)
    
     #Relationships
-    user   = db.relationship('User', backref=db.backref('comment'))
-    pin    = db.relationship('Pin', backref=db.backref('comments'))
+    owner = db.relationship('User', backref=db.backref('comments'))
+    pin   = db.relationship('Pin', backref=db.backref('comments'))
 
 
 

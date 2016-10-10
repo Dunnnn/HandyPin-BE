@@ -7,15 +7,10 @@ from ..models.schemas import UserSchema
 
 mod_auth = Blueprint('auth', __name__, url_prefix='/auth')
 
-@mod_auth.route('/', methods=['POST', 'GET'])
-def test():
-	return "This is authentication route"
-
 @mod_auth.route("/signin", methods = ["POST","GET"])
 def sign_in():
     username = str(request.args["username"])
     password = str(request.args["password"])
-    next_page = request.values.get("next", "/")
 
     user = User.query.filter_by(username=username).first()
 
@@ -25,7 +20,7 @@ def sign_in():
     match = user.password == password
     if match:
         result = login_user(user)
-        user_schema = UserSchema(only=("id"))
+        user_schema = UserSchema(only=("id",))
         return  jsonify(user_schema.dump(user).data)
     else:
         return jsonify({"message" : "Incorrect username or password"}), 400
@@ -39,7 +34,7 @@ def sign_out():
 @mod_auth.route("/current_user", methods = ["GET"])
 def get_current_user():
     if(current_user.get_id()):
-        user_schema = UserSchema(only=("id"))
+        user_schema = UserSchema(only=("id",))
         return  jsonify(user_schema.dump(current_user).data)
     else:
         return jsonify({"message" : "User not logged in"}), 401
