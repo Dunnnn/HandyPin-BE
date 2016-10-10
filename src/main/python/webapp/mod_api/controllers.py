@@ -5,6 +5,7 @@ from flask_restful import reqparse
 from flask_restful_swagger import swagger
 from datetime import datetime
 from sqlalchemy_searchable import search, parse_search_query
+from geoalchemy2 import WKTElement
 
 from ..models.models import *
 from ..models.schemas import *
@@ -58,9 +59,9 @@ class UserResource(flask_restful.Resource):
 
         if(args['request_fields']):
             request_fields = tuple(args['request_fields'])
-            user_schema = EntitySchema(exclude='password', only=request_fields)
+            user_schema = UserSchema(exclude='password', only=request_fields)
         else:
-            user_schema = EntitySchema(exclude='password')
+            user_schema = UserSchema(exclude='password')
 
         user = user_query.get(user_id)
 
@@ -114,10 +115,15 @@ api.add_resource(UsersResource, '/users')
 class PinResource(flask_restful.Resource):
     def get(self, pin_id):
         parser = reqparse.RequestParser()
-        parser.add_argument('request_fields', type=str, action='append')
+        parser.add_argument('request_fields', action='append')
 
         args = parser.parse_args()
         pin_query = Pin.query
+
+        sw_longitude = args['sw_longitude']
+        sw_latitude = args['sw_latitude']
+        ne_longitude = args['sw_longitude']
+        ne_latitude = args['sw_latitude']
 
         if(args['request_fields']):
             request_fields = tuple(args['request_fields'])
@@ -140,8 +146,43 @@ api.add_resource(PinResource, '/pins/<int:pin_id>')
 
 class PinsResource(flask_restful.Resource):
     def get(self):
-        pins = Pin.query.all()
-        pin_schema = PinSchema()
-        return pin_schema.dump(pins, many=True).data
+        parser = reqparse.RequestParser()
+        parser.add_argument('request_fields', action='append')
+        #xmin
+        parser.add_argument('sw_longitude', type=float)
+        #ymin
+        parser.add_argument('sw_latitude', type=float)
+        #xmax
+        parser.add_argument('ne_longitude', type=float)
+        #ymax
+        parser.add_argument('ne_latitude', type=float)
+
+        args = parser.parse_args()
+        pin_query = Pin.query
+
+        sw_longitude = args['sw_longitude']
+        sw_latitude = args['sw_latitude']
+        ne_longitude = args['ne_longitude']
+        ne_latitude = args['ne_latitude']
+
+        pin_query = pin_query.filter(func.ST_Contains(func.ST_MakeEnvelope(sw_longitude, sw_latitude, ne_longitude, ne_latitude, 4326), Pin.geo))
+
+        if(args['request_fields']):
+            request_fields = tuple(args['request_fields'])
+            pin_schema = PinSchema(only=request_fields)
+        else:
+            pin_schema = PinSchema()
+
+        pins = pin_query.all()
+        print pin_query
+
+        if(not pins):
+            return {"message" :"Pin not found"}, HTTP_NOT_FOUND
+
+        try:
+            pin_json = pin_schema.dump(pins, many=True).data
+            return pin_json
+        except AttributeError as err:
+            return {"message" : {"request_fields" : format(err)} }, HTTP_BAD_REQUEST
 
 api.add_resource(PinsResource, '/pins')

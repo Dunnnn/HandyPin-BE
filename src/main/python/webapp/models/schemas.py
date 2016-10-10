@@ -1,13 +1,13 @@
 from sqlalchemy import func
 from marshmallow import fields
 from marshmallow_sqlalchemy import ModelSchema, ModelConverter, field_for
-from geoalchemy2 import Geography
+from geoalchemy2 import Geometry
 from models import *
 
 class GeoConverter(ModelConverter):
     SQLA_TYPE_MAPPING = ModelConverter.SQLA_TYPE_MAPPING.copy()
     SQLA_TYPE_MAPPING.update({
-        Geography: fields.Str
+        Geometry: fields.Str
     })
 
 class GeographySerializationField(fields.String):
@@ -16,7 +16,7 @@ class GeographySerializationField(fields.String):
             return value
         else:
             if attr == 'geo':
-                return {'latitude': db.session.scalar(func.ST_X(value)), 'longitude': db.session.scalar(func.ST_Y(value))}
+                return {'lng': db.session.scalar(func.ST_X(value)), 'lat': db.session.scalar(func.ST_Y(value))}
             else:
                 return None
 
@@ -35,7 +35,7 @@ class GeographySerializationField(fields.String):
         if value is None:
             return value
         else:
-            if attr == 'loc':
+            if attr == 'geo':
                 return WKTGeographyElement('POINT({0} {1})'.format(str(value.get('longitude')), str(value.get('latitude'))))
             else:
                 return None
