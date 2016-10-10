@@ -20,7 +20,7 @@ def sign_in():
     match = user.password == password
     if match:
         result = login_user(user)
-        user_schema = UserSchema(only=("id",))
+        user_schema = UserSchema(only=("id","username", "nickname"))
         return  jsonify(user_schema.dump(user).data)
     else:
         return jsonify({"message" : "Incorrect username or password"}), 400
@@ -34,7 +34,7 @@ def sign_out():
 @mod_auth.route("/current_user", methods = ["GET"])
 def get_current_user():
     if(current_user.get_id()):
-        user_schema = UserSchema(only=("id",))
+        user_schema = UserSchema(only=("id","username", "nickname"))
         return  jsonify(user_schema.dump(current_user).data)
     else:
         return jsonify({"message" : "User not logged in"}), 401

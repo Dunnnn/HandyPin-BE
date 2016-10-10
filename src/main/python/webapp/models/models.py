@@ -1,10 +1,10 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy, BaseQuery
 from sqlalchemy.ext.declarative import declared_attr
-from sqlalchemy_searchable import make_searchable
-from sqlalchemy_searchable import SearchQueryMixin
+from sqlalchemy_searchable import make_searchable, SearchQueryMixin
 from sqlalchemy_utils.types import TSVectorType
 from sqlalchemy.ext.hybrid import hybrid_property, hybrid_method
+from geoalchemy2 import Geometry, Geography
 
 import datetime
 from .. import app
@@ -46,10 +46,11 @@ class TableTemplate():
 class User(TableTemplate, db.Model, CRUD):
     query_class = UserQuery
 
-    id        = db.Column(db.Integer, primary_key=True)
-    username  = db.Column(db.String(20), unique=True, nullable=False)
-    password  = db.Column(db.String(20), nullable=False)
-    email     = db.Column(db.String(120), unique=True, nullable=False)
+    id       = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(20), unique=True, nullable=False)
+    nickname = db.Column(db.String(20), unique=True)
+    password = db.Column(db.String(20), nullable=False)
+    email    = db.Column(db.String(120), unique=True, nullable=False)
     
     #Seach Vector
     search_vector = db.Column(TSVectorType('username', 'email'))
@@ -75,7 +76,7 @@ class User(TableTemplate, db.Model, CRUD):
 
 class Pin(TableTemplate, db.Model, CRUD):
     id          = db.Column(db.Integer, primary_key=True)
-    geo         = db.Column(db.String(20))                
+    geo         = db.Column(Geography(geometry_type='POINT', srid=4326))
     title       = db.Column(db.String(20), nullable=False)
     short_title = db.Column(db.String(20), nullable=False)
     description = db.Column(db.String(120))
