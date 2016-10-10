@@ -53,5 +53,3 @@ def load_user(id):
 def unauthorized():
     return "unauthorized"
 
-
-

@@ -16,7 +16,7 @@ db = SQLAlchemy(app)
 make_searchable(options={'regconfig': 'pg_catalog.simple'})
 
 #Query classes for full text searching
-class EntityQuery(BaseQuery, SearchQueryMixin):
+class UserQuery(BaseQuery, SearchQueryMixin):
     pass
 
 #Class to add, update and delete data via SQLALchemy sessions
@@ -45,7 +45,7 @@ class TableTemplate():
         return db.Column(db.DateTime, onupdate=datetime.datetime.now)
 
 class User(TableTemplate, db.Model, CRUD):
-    query_class = EntityQuery
+    query_class = UserQuery
 
     id                       = db.Column(db.Integer, primary_key=True)
     username                 = db.Column(db.String(20), unique=True, nullable=False)

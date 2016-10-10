@@ -1,10 +1,8 @@
 from flask import Flask, request, url_for, send_file
-from flask_triangle import Triangle
-#from flask_socketio import SocketIO
 from flask_login import LoginManager, current_user
 
 app = Flask(__name__, static_path='/static')
-#app.config.from_object('config')
+app.config.from_object('config')
 
 login_manager = LoginManager()
 login_manager.init_app(app)
