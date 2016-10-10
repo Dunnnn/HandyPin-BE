@@ -1,3 +1,4 @@
+from sqlalchemy import func
 from marshmallow import fields
 from marshmallow_sqlalchemy import ModelSchema, ModelConverter, field_for
 from geoalchemy2 import Geography
@@ -15,7 +16,7 @@ class GeographySerializationField(fields.String):
             return value
         else:
             if attr == 'geo':
-                return {'latitude': db.session.scalar(geo_funcs.ST_X(value)), 'longitude': db.session.scalar(geo_funcs.ST_Y(value))}
+                return {'latitude': db.session.scalar(func.ST_X(value)), 'longitude': db.session.scalar(func.ST_Y(value))}
             else:
                 return None
 

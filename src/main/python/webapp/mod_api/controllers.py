@@ -46,3 +46,102 @@ api = flask_restful.Api()
 """Calling init_app can defer for Blueprint object"""
 api.init_app(mod_api)
 api = swagger.docs(api, apiVersion=API_VERSION, api_spec_url='/spec')
+
+"""Users Related Routes"""
+class UserResource(flask_restful.Resource):
+    def get(self, user_id):
+        parser = reqparse.RequestParser()
+        parser.add_argument('request_fields', type=str, action='append')
+
+        args = parser.parse_args()
+        user_query = User.query
+
+        if(args['request_fields']):
+            request_fields = tuple(args['request_fields'])
+            user_schema = EntitySchema(exclude='password', only=request_fields)
+        else:
+            user_schema = EntitySchema(exclude='password')
+
+        user = user_query.get(user_id)
+
+        if(not user):
+            return {"message" :"User not found"}, HTTP_NOT_FOUND
+
+        try:
+            user_json = user_schema.dump(user).data
+            return user_json
+        except AttributeError as err:
+            return {"message" : {"request_fields" : format(err)} }, HTTP_BAD_REQUEST
+
+api.add_resource(UserResource, '/users/<int:user_id>')
+
+class UsersResource(flask_restful.Resource):
+    def get(self):
+        users = User.query.all()
+        user_schema = UserSchema()
+        return user_schema.dump(users, many=True).data
+
+    def post(self):
+        """Sign Up"""
+        parser = reqparse.RequestParser()
+        parser.add_argument('username', type=str, required=True)
+        parser.add_argument('password', type=str, required=True)
+        parser.add_argument('email', type=str, required=True)
+        args = parser.parse_args()
+
+        username = args['username']
+        password = args['password']
+        email = args['email']
+
+        existing_user= User.query.filter(or_(User.email==email, Entity.username==username)).first()
+        if(existing_USER):
+            return {"message" :"Username or email already used"}, HTTP_BAD_REQUEST
+
+        try:
+            new_user= User(username=username, password=password, email=email)
+
+            new_user.add(new_user)
+            user_schema = UserSchema(exclude=('password',))
+            user_json = user_schema.dump(new_user).data
+        except exc.IntegrityError as err:
+            return{"message" : "Failed to add use during database execution. The error message returned is: {0}".format(err)}, HTTP_BAD_REQUEST
+
+        return user_json
+
+api.add_resource(UsersResource, '/users')
+
+"""Pins Related Routes"""
+class PinResource(flask_restful.Resource):
+    def get(self, pin_id):
+        parser = reqparse.RequestParser()
+        parser.add_argument('request_fields', type=str, action='append')
+
+        args = parser.parse_args()
+        pin_query = Pin.query
+
+        if(args['request_fields']):
+            request_fields = tuple(args['request_fields'])
+            pin_schema = PinSchema(only=request_fields)
+        else:
+            pin_schema = PinSchema()
+
+        pin = pin_query.get(pin_id)
+
+        if(not pin):
+            return {"message" :"Pin not found"}, HTTP_NOT_FOUND
+
+        try:
+            pin_json = pin_schema.dump(pin).data
+            return pin_json
+        except AttributeError as err:
+            return {"message" : {"request_fields" : format(err)} }, HTTP_BAD_REQUEST
+
+api.add_resource(PinResource, '/pins/<int:pin_id>')
+
+class PinsResource(flask_restful.Resource):
+    def get(self):
+        pins = Pin.query.all()
+        pin_schema = PinSchema()
+        return pin_schema.dump(pins, many=True).data
+
+api.add_resource(PinsResource, '/pins')

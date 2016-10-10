@@ -4,7 +4,7 @@ from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy_searchable import make_searchable, SearchQueryMixin
 from sqlalchemy_utils.types import TSVectorType
 from sqlalchemy.ext.hybrid import hybrid_property, hybrid_method
-from geoalchemy2 import Geometry, Geography
+from geoalchemy2 import Geography
 
 import datetime
 from .. import app
@@ -77,9 +77,9 @@ class User(TableTemplate, db.Model, CRUD):
 class Pin(TableTemplate, db.Model, CRUD):
     id          = db.Column(db.Integer, primary_key=True)
     geo         = db.Column(Geography(geometry_type='POINT', srid=4326))
-    title       = db.Column(db.String(20), nullable=False)
+    title       = db.Column(db.String(50), nullable=False)
     short_title = db.Column(db.String(20), nullable=False)
-    description = db.Column(db.String(120))
+    description = db.Column(db.String(256))
     owner_id       = db.Column(db.Integer, db.ForeignKey('user.id'))
 
     #Relationships
@@ -87,7 +87,6 @@ class Pin(TableTemplate, db.Model, CRUD):
 
     #Seach Vector
     search_vector = db.Column(TSVectorType('title', 'description', 'short_title'))
-
 
 class Vote(db.Model, CRUD):
     id          = db.Column(db.Integer, primary_key=True)
@@ -136,11 +135,3 @@ class Comment(TableTemplate, db.Model, CRUD):
     #Relationships
     owner = db.relationship('User', backref=db.backref('comments'))
     pin   = db.relationship('Pin', backref=db.backref('comments'))
-
-
-
-
-
-
-
-
