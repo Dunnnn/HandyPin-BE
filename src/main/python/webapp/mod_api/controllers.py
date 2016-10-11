@@ -215,3 +215,97 @@ class PinsResource(flask_restful.Resource):
 
 
 api.add_resource(PinsResource, '/pins')
+
+class VotePin(flask_restful.Resource):
+    def post(self):
+        parser = reqparse.RequestParser()
+        parser.add_argument('user_id', type=int, required=True)
+        parser.add_argument('pin_id', type=int, required=True)
+        parser.add_argument('vote', type=int, required=True)
+
+        args = parser.parse_args()
+        user_id = args['user_id']
+        pin_id = args['pin_id']
+        vote = args['vote']
+
+        pin_query = Pin.query
+
+        pin = pin_query.get(pin_id)
+
+        if(not pin):
+            return {"message" :"Pin not found"}, HTTP_NOT_FOUND
+
+        user_query = User.query
+        user = user_query.get(user_id)
+
+        if(not user):
+            return {"message" :"User not found"}, HTTP_NOT_FOUND
+
+        vote_query = Vote.query
+
+        existing_vote= vote_query.filter(and_(Vote.user_id==user_id, Vote.pin_id==pin_id)).first()
+        if(existing_vote):
+            return {"message" :"User have already voted"}, HTTP_BAD_REQUEST
+
+        try:
+            if(vote == 0):
+                user_vote = False;
+            else:
+                user_vote = True;
+
+            new_vote= Vote(user_id=user_id, pin_id=pin_id, vote=user_vote)
+
+            new_vote.add(new_vote)
+            vote_schema = VoteSchema()
+            vote_json = vote_schema.dump(new_vote).data
+        except exc.IntegrityError as err:
+            return{"message" : "Failed to add vote during database execution. The error message returned is: {0}".format(err)}, HTTP_BAD_REQUEST
+
+        return vote_json
+
+api.add_resource(VotePin, '/vote')
+
+
+class CommentPin(flask_restful.Resource):
+    def post(self):
+        parser = reqparse.RequestParser()
+        parser.add_argument('owner_id', type=int, required=True)
+        parser.add_argument('pin_id', type=int, required=True)
+        parser.add_argument('content', type=str, required=True)
+
+        args = parser.parse_args()
+        owner_id = args['owner_id']
+        pin_id = args['pin_id']
+        content = args['content']
+
+        pin_query = Pin.query
+
+        pin = pin_query.get(pin_id)
+
+        if(not pin):
+            return {"message" :"Pin not found"}, HTTP_NOT_FOUND
+
+        user_query = User.query
+        user = user_query.get(owner_id)
+
+        if(not user):
+            return {"message" :"User not found"}, HTTP_NOT_FOUND
+
+        comment_query = Comment.query
+
+        if (content == ""):
+            return {"message" :"content is not valid"}, HTTP_BAD_REQUEST
+
+        try:
+            new_comment= Comment(owner_id=owner_id, pin_id=pin_id, content=content)
+
+            new_comment.add(new_comment)
+            comment_schema = CommentSchema()
+            comment_json = comment_schema.dump(new_comment).data
+        except exc.IntegrityError as err:
+            return{"message" : "Failed to add comment during database execution. The error message returned is: {0}".format(err)}, HTTP_BAD_REQUEST
+
+        return comment_json
+
+api.add_resource(CommentPin, '/comment')
+
