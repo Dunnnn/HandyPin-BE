@@ -88,11 +88,21 @@ class Pin(TableTemplate, db.Model, CRUD):
     #Seach Vector
     search_vector = db.Column(TSVectorType('title', 'description', 'short_title'))
 
+    @hybrid_property
+    def vote_score(self):
+        if(self.votes):
+            return sum((1 if vote.vote else -1) for vote in self.votes)
+        else:
+            return 0
+
+    def load_hybrid_properties(self):
+        self.vote_score
+
 class Vote(db.Model, CRUD):
     id          = db.Column(db.Integer, primary_key=True)
     user_id     = db.Column(db.Integer, db.ForeignKey('user.id'))
     pin_id      = db.Column(db.Integer, db.ForeignKey('pin.id'))
-    Vote        = db.Column(db.Boolean, nullable=False)
+    vote        = db.Column(db.Boolean, nullable=False)
     
     #Relationships
     user = db.relationship('User', backref=db.backref('votes'))

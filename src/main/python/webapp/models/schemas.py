@@ -47,6 +47,8 @@ class UserSchema(ModelSchema):
 
 class PinSchema(ModelSchema):
     geo = GeographySerializationField(attribute='geo')
+    comments = fields.Nested('CommentSchema', many=True)
+    vote_score = fields.Integer()
     class Meta:
         model = Pin
         sqla_session = db.session
