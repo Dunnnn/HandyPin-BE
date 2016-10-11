@@ -94,8 +94,8 @@ class UsersResource(flask_restful.Resource):
         password = args['password']
         email = args['email']
 
-        existing_user= User.query.filter(or_(User.email==email, Entity.username==username)).first()
-        if(existing_USER):
+        existing_user= User.query.filter(or_(User.email==email, User.username==username)).first()
+        if(existing_user):
             return {"message" :"Username or email already used"}, HTTP_BAD_REQUEST
 
         try:

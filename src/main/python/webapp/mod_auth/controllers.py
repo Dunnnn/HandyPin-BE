@@ -25,7 +25,7 @@ def sign_in():
     else:
         return jsonify({"message" : "Incorrect username or password"}), 400
 
-@mod_auth.route("/logout", methods = ["GET"])
+@mod_auth.route("/signout", methods = ["GET"])
 def sign_out():
     logout_user()
     session.clear()
