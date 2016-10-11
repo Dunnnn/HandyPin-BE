@@ -174,7 +174,6 @@ class PinsResource(flask_restful.Resource):
             pin_schema = PinSchema()
 
         pins = pin_query.all()
-        print pin_query
 
         if(not pins):
             return {"message" :"Pin not found"}, HTTP_NOT_FOUND
@@ -184,5 +183,35 @@ class PinsResource(flask_restful.Resource):
             return pin_json
         except AttributeError as err:
             return {"message" : {"request_fields" : format(err)} }, HTTP_BAD_REQUEST
+
+    def post(self):
+        parser = reqparse.RequestParser()
+        parser.add_argument('longitude', type=float, required=True)
+        parser.add_argument('latitude', type=float, required=True)
+        parser.add_argument('title', type=str, required=True)
+        parser.add_argument('short_title', type=str, required=True)
+        parser.add_argument('description', type=str)
+        parser.add_argument('owner_id', type=int, required=True)
+
+        args = parser.parse_args()
+
+        longitude = args['longitude']
+        latitude = args['latitude']
+        title = args['title']
+        short_title = args['short_title']
+        owner_id = args['owner_id']
+        description = args['description']
+
+        try:
+            new_pin = Pin(title=title, short_title=short_title, owner_id=owner_id, description=description, geo=WKTElement('Point({0} {1})'.format(longitude, latitude), srid=4326))
+        
+            new_pin.add(new_pin)
+            pin_schema = PinSchema()
+            pin_json = pin_schema.dump(new_pin).data
+        except exc.IntegrityError as err:
+            return{"message" : "Failed to add pin during database execution. The error message returned is: {0}".format(err)}, HTTP_BAD_REQUEST
+
+        return pin_json
+
 
 api.add_resource(PinsResource, '/pins')
