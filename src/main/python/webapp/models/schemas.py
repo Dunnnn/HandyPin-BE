@@ -46,6 +46,7 @@ class UserSchema(ModelSchema):
         exclude = ('search_vector',)
 
 class PinSchema(ModelSchema):
+    owner = fields.Nested('UserSchema', exclude=("password",))
     geo = GeographySerializationField(attribute='geo')
     comments = fields.Nested('CommentSchema', many=True)
     vote_score = fields.Integer()

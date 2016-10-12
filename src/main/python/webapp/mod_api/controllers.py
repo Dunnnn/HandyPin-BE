@@ -120,11 +120,6 @@ class PinResource(flask_restful.Resource):
         args = parser.parse_args()
         pin_query = Pin.query
 
-        sw_longitude = args['sw_longitude']
-        sw_latitude = args['sw_latitude']
-        ne_longitude = args['sw_longitude']
-        ne_latitude = args['sw_latitude']
-
         if(args['request_fields']):
             request_fields = tuple(args['request_fields'])
             pin_schema = PinSchema(only=request_fields)
