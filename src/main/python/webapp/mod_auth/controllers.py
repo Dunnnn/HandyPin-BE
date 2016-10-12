@@ -29,7 +29,7 @@ def sign_in():
 def sign_out():
     logout_user()
     session.clear()
-    return redirect("/")
+    return jsonify({"message" : "User has signed out successfully"}), 200
 
 @mod_auth.route("/current_user", methods = ["GET"])
 def get_current_user():
