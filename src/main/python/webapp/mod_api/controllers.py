@@ -1,4 +1,5 @@
 from flask import Blueprint, request, render_template, redirect, url_for, Flask, jsonify
+import werkzeug
 import flask_restful
 from sqlalchemy import and_, or_, exc
 from flask_restful import reqparse
@@ -9,6 +10,7 @@ from geoalchemy2 import WKTElement
 
 from ..models.models import *
 from ..models.schemas import *
+from ..lib.s3_lib import *
 
 API_VERSION = 1
 
@@ -303,4 +305,47 @@ class CommentPin(flask_restful.Resource):
         return comment_json
 
 api.add_resource(CommentPin, '/comment')
+
+class UploadUserProfilePhoto(flask_restful.Resource):
+    def post(self, user_id):
+        user = User.query.get(user_id)
+
+        if(not user):
+            return {"message" :"User not found"}, HTTP_NOT_FOUND
+
+        parser = reqparse.RequestParser()
+        parser.add_argument('profile_photo', type=werkzeug.datastructures.FileStorage, location='files')
+
+        args = parser.parse_args()
+        profile_photo = args['profile_photo']
+        profile_photo_basename = profile_photo.filename.rsplit('.', 1)[0]
+        profile_photo_ext = profile_photo.filename.rsplit('.', 1)[1]
+
+        #Recompose filename to include current datetime
+        profile_photo_filename = 'user{0}_{1}_{2}.{3}'.format(user_id, profile_photo_basename, datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%S'), profile_photo_ext)
+        profile_photo_tmp_path = os.path.join(app.config['UPLOAD_FOLDER'], profile_photo_filename)
+        profile_photo.save(profile_photo_tmp_path)
+
+        upload_error = None
+        try:
+            s3_helper = S3Helper()
+            s3_helper.upload_file(profile_photo_tmp_path, profile_photo_filename)
+        except:
+            upload_error = True
+        finally:
+            os.remove(profile_photo_tmp_path)
+
+        if(upload_error):
+            return {"message" : "Failed to upload profile picture"}, HTTP_INTERNAL_SERVER_ERROR
+
+        profile_photo_s3_url = 'https://s3.amazonaws.com/handypin/{0}'.format(profile_photo_filename)
+        profile_photo_file = File(filename = profile_photo_filename, download_url = profile_photo_s3_url)
+        user.profile_photo = profile_photo_file
+        user.update()
+        file_schema = FileSchema()
+
+        return file_schema.dump(profile_photo_file).data
+
+
+api.add_resource(UploadUserProfilePhoto, '/users/<int:user_id>/profile_photo')
 

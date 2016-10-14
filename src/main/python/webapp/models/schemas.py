@@ -41,6 +41,7 @@ class GeographySerializationField(fields.String):
                 return None
 
 class UserSchema(ModelSchema):
+    profile_photo = fields.Nested('FileSchema')
     class Meta:
         model = User
         exclude = ('search_vector',)
@@ -49,6 +50,7 @@ class PinSchema(ModelSchema):
     owner = fields.Nested('UserSchema', exclude=("password",))
     geo = GeographySerializationField(attribute='geo')
     comments = fields.Nested('CommentSchema', many=True)
+    pin_photo = fields.Nested('FileSchema')
     vote_score = fields.Integer()
     class Meta:
         model = Pin
@@ -74,3 +76,6 @@ class PinTagSchema(ModelSchema):
     class Meta:
         model = PinTag
 
+class FileSchema(ModelSchema):
+    class Meta:
+        model = File

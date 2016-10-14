@@ -46,14 +46,16 @@ class TableTemplate():
 class User(TableTemplate, db.Model, CRUD):
     query_class = UserQuery
 
-    id       = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(20), unique=True, nullable=False)
-    nickname = db.Column(db.String(20), unique=True)
-    password = db.Column(db.String(20), nullable=False)
-    email    = db.Column(db.String(120), unique=True, nullable=False)
+    id               = db.Column(db.Integer, primary_key=True)
+    username         = db.Column(db.String(20), unique=True, nullable=False)
+    nickname         = db.Column(db.String(20), unique=True)
+    password         = db.Column(db.String(20), nullable=False)
+    email            = db.Column(db.String(120), unique=True, nullable=False)
+    profile_photo_id = db.Column(db.Integer, db.ForeignKey('file.id'), unique=True)
     
     #Seach Vector
     search_vector = db.Column(TSVectorType('username', 'email'))
+    profile_photo = db.relationship('File')
 
     def get_id(self):
         return unicode(self.id)
@@ -75,15 +77,17 @@ class User(TableTemplate, db.Model, CRUD):
         return unicode(self.id)
 
 class Pin(TableTemplate, db.Model, CRUD):
-    id          = db.Column(db.Integer, primary_key=True)
-    geo         = db.Column(Geometry(geometry_type='POINT', srid=4326))
-    title       = db.Column(db.String(50), nullable=False)
-    short_title = db.Column(db.String(20), nullable=False)
-    description = db.Column(db.String(256))
-    owner_id       = db.Column(db.Integer, db.ForeignKey('user.id'))
+    id               = db.Column(db.Integer, primary_key=True)
+    geo              = db.Column(Geometry(geometry_type='POINT', srid=4326))
+    title            = db.Column(db.String(50), nullable=False)
+    short_title      = db.Column(db.String(20), nullable=False)
+    description      = db.Column(db.String(256))
+    owner_id         = db.Column(db.Integer, db.ForeignKey('user.id'))
+    pin_photo_id = db.Column(db.Integer, db.ForeignKey('file.id'), unique=True)
 
     #Relationships
     owner = db.relationship('User', backref=db.backref('pin'))
+    pin_photo = db.relationship('File')
 
     #Seach Vector
     search_vector = db.Column(TSVectorType('title', 'description', 'short_title'))
@@ -145,3 +149,8 @@ class Comment(TableTemplate, db.Model, CRUD):
     #Relationships
     owner = db.relationship('User', backref=db.backref('comments'))
     pin   = db.relationship('Pin', backref=db.backref('comments'))
+
+class File(TableTemplate, db.Model, CRUD):
+    id = db.Column(db.Integer, primary_key=True)
+    filename = db.Column(db.String(1024), nullable=False)
+    download_url = db.Column(db.String(1024), nullable=False)
