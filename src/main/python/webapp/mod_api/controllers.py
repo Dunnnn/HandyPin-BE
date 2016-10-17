@@ -259,8 +259,23 @@ class VotePin(flask_restful.Resource):
             return{"message" : "Failed to add vote during database execution. The error message returned is: {0}".format(err)}, HTTP_BAD_REQUEST
 
         return vote_json
+    
 
-api.add_resource(VotePin, '/vote')
+api.add_resource(VotePin, '/votes')
+
+class DeleteVote(flask_restful.Resource):
+    def delete(self, vote_id):
+        vote = Vote.query.get(vote_id)
+
+        if(vote):
+            vote.delete(vote)
+            return {"message" : "Vote successfully deleted"}
+        else:
+            return {"message" : "Vote not found" }, HTTP_NOT_FOUND
+        
+
+api.add_resource(DeleteVote, '/votes/<int:vote_id>')
+    
 
 
 class CommentPin(flask_restful.Resource):

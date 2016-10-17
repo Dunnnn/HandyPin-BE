@@ -1,5 +1,6 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy, BaseQuery
+from flask_login import current_user
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy_searchable import make_searchable, SearchQueryMixin
 from sqlalchemy_utils.types import TSVectorType
@@ -57,9 +58,6 @@ class User(TableTemplate, db.Model, CRUD):
     search_vector = db.Column(TSVectorType('username', 'email'))
     profile_photo = db.relationship('File')
 
-    def get_id(self):
-        return unicode(self.id)
-
     def get_email(self):
         return self.email;
 
@@ -99,8 +97,22 @@ class Pin(TableTemplate, db.Model, CRUD):
         else:
             return 0
 
+    @hybrid_property
+    def vote_by_current_user(self):
+        if(self.votes):
+            if(current_user.get_id()):
+                for vote in self.votes:
+                    if(vote.user_id == current_user.id):
+                        return vote 
+                return None
+            else:
+                return None
+        else:
+            return None
+
     def load_hybrid_properties(self):
         self.vote_score
+        self.vote_by_current_user
 
 class Vote(db.Model, CRUD):
     id          = db.Column(db.Integer, primary_key=True)

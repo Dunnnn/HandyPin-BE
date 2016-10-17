@@ -52,6 +52,7 @@ class PinSchema(ModelSchema):
     comments = fields.Nested('CommentSchema', many=True)
     pin_photo = fields.Nested('FileSchema')
     vote_score = fields.Integer()
+    vote_by_current_user = fields.Nested('VoteSchema', only=('id', 'vote'))
     class Meta:
         model = Pin
         sqla_session = db.session
