@@ -64,6 +64,7 @@ class VoteSchema(ModelSchema):
         model = Vote
 
 class CommentSchema(ModelSchema):
+    owner = fields.Nested('UserSchema', only=('id', 'username', 'nickname', 'profile_photo'))
     class Meta:
         model = Comment
         exclude = ('search_vector',)
