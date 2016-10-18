@@ -16,7 +16,7 @@ db = SQLAlchemy(app)
 make_searchable(options={'regconfig': 'pg_catalog.simple'})
 
 #Query classes for full text searching
-class UserQuery(BaseQuery, SearchQueryMixin):
+class PinQuery(BaseQuery, SearchQueryMixin):
     pass
 
 #Class to add, update and delete data via SQLALchemy sessions
@@ -45,8 +45,6 @@ class TableTemplate():
         return db.Column(db.DateTime, onupdate=datetime.datetime.now)
 
 class User(TableTemplate, db.Model, CRUD):
-    query_class = UserQuery
-
     id               = db.Column(db.Integer, primary_key=True)
     username         = db.Column(db.String(20), unique=True, nullable=False)
     nickname         = db.Column(db.String(20), unique=True)
@@ -55,7 +53,9 @@ class User(TableTemplate, db.Model, CRUD):
     profile_photo_id = db.Column(db.Integer, db.ForeignKey('file.id'), unique=True)
     
     #Seach Vector
-    search_vector = db.Column(TSVectorType('username', 'email'))
+    search_vector = db.Column(TSVectorType('username', 'email', 'nickname'))
+
+    #Relationships
     profile_photo = db.relationship('File')
 
     def get_email(self):
@@ -75,6 +75,8 @@ class User(TableTemplate, db.Model, CRUD):
         return unicode(self.id)
 
 class Pin(TableTemplate, db.Model, CRUD):
+    query_class = PinQuery
+
     id               = db.Column(db.Integer, primary_key=True)
     geo              = db.Column(Geometry(geometry_type='POINT', srid=4326))
     title            = db.Column(db.String(50), nullable=False)

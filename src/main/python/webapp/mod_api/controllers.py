@@ -1,7 +1,7 @@
 from flask import Blueprint, request, render_template, redirect, url_for, Flask, jsonify
 import werkzeug
 import flask_restful
-from sqlalchemy import and_, or_, exc
+from sqlalchemy import and_, or_, exc, func
 from flask_restful import reqparse
 from flask_restful_swagger import swagger
 from datetime import datetime
@@ -153,6 +153,7 @@ class PinsResource(flask_restful.Resource):
         parser.add_argument('ne_longitude', type=float)
         #ymax
         parser.add_argument('ne_latitude', type=float)
+        parser.add_argument('keyword', type=str)
 
         args = parser.parse_args()
         pin_query = Pin.query
@@ -169,6 +170,13 @@ class PinsResource(flask_restful.Resource):
             pin_schema = PinSchema(only=request_fields)
         else:
             pin_schema = PinSchema()
+
+        if(args['keyword']):
+            keyword = args['keyword']
+
+            combined_search_vector = ( Pin.search_vector | User.search_vector | func.coalesce(Tag.search_vector, u'') )
+
+            pin_query = pin_query.join(User).outerjoin(PinTag).outerjoin(Tag).filter(combined_search_vector.match(parse_search_query(keyword)))
 
         pins = pin_query.all()
 
@@ -189,6 +197,7 @@ class PinsResource(flask_restful.Resource):
         parser.add_argument('short_title', type=str, required=True)
         parser.add_argument('description', type=str)
         parser.add_argument('owner_id', type=int, required=True)
+        parser.add_argument('tag_strings', type=str, action='append')
 
         args = parser.parse_args()
 
@@ -198,11 +207,28 @@ class PinsResource(flask_restful.Resource):
         short_title = args['short_title']
         owner_id = args['owner_id']
         description = args['description']
+        tag_strings = None
+
+        if(args['tag_strings']):
+            tag_strings = args['tag_strings']
 
         try:
             new_pin = Pin(title=title, short_title=short_title, owner_id=owner_id, description=description, geo=WKTElement('Point({0} {1})'.format(longitude, latitude), srid=4326))
-        
+
             new_pin.add(new_pin)
+
+            if(tag_strings):
+                for tag_string in tag_strings:
+                    tag = Tag.query.filter_by(label=tag_string).first()
+                    if(tag):
+                        pintag = PinTag(pin=new_pin, tag=tag)
+                        pintag.add(pintag)
+                    else:
+                        new_tag = Tag(label=tag_string.lower())
+                        new_tag.add(new_tag)
+                        pintag = PinTag(pin=new_pin, tag=new_tag)
+                        pintag.add(pintag)
+        
             pin_schema = PinSchema()
             pin_json = pin_schema.dump(new_pin).data
         except exc.IntegrityError as err:
