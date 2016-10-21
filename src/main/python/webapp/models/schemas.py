@@ -52,6 +52,7 @@ class PinSchema(ModelSchema):
     comments = fields.Nested('CommentSchema', many=True)
     pin_photo = fields.Nested('FileSchema')
     vote_score = fields.Integer()
+    pin_tags = fields.Nested('PinTagSchema', many=True)
     vote_by_current_user = fields.Nested('VoteSchema', only=('id', 'vote'))
     class Meta:
         model = Pin
@@ -75,6 +76,7 @@ class TagSchema(ModelSchema):
         exclude = ('search_vector',)
 
 class PinTagSchema(ModelSchema):
+    tag = fields.Nested('TagSchema')
     class Meta:
         model = PinTag
 

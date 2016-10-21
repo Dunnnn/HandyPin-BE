@@ -146,7 +146,7 @@ class PinTag(db.Model, CRUD):
 
     #Relationships
     tag = db.relationship('Tag')
-    pin = db.relationship('Pin', backref=db.backref('tags'))
+    pin = db.relationship('Pin', backref=db.backref('pin_tags'))
 
     #Constraints
     __table_args__ = (
