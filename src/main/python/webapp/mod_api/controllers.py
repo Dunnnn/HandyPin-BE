@@ -371,7 +371,7 @@ class UploadUserProfilePhoto(flask_restful.Resource):
         try:
             s3_helper = S3Helper()
             s3_helper.upload_file(profile_photo_tmp_path, profile_photo_filename)
-        except:
+	except:
             upload_error = True
         finally:
             os.remove(profile_photo_tmp_path)
