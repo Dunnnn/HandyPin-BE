@@ -154,6 +154,7 @@ class PinsResource(flask_restful.Resource):
         #ymax
         parser.add_argument('ne_latitude', type=float)
         parser.add_argument('keyword', type=str)
+        parser.add_argument('current_user_id', type=int)
 
         args = parser.parse_args()
         pin_query = Pin.query
@@ -179,6 +180,12 @@ class PinsResource(flask_restful.Resource):
             pin_query = pin_query.join(User).outerjoin(PinTag).outerjoin(Tag).filter(combined_search_vector.match(parse_search_query(keyword)))
 
         pins = pin_query.all()
+        if(args['current_user_id']):
+            for pin in pins:
+                if(pin.votes):
+                    for vote in pin.votes:
+                        if(vote.user_id == args['current_user_id']):
+                            pin.vote_by_current_user = vote
 
         if(not pins):
             return {"message" :"Pin not found"}, HTTP_NOT_FOUND
