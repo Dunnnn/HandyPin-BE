@@ -1,6 +1,6 @@
 from flask import Blueprint, request, render_template, redirect, url_for, session, jsonify
 from webapp import login_manager
-from flask_login import login_required, login_user, logout_user, current_user, login_url
+from flask_login import login_required, login_user, logout_user, current_user, login_url, confirm_login
 from ..models.models import User
 from ..models.schemas import UserSchema
 
@@ -19,7 +19,7 @@ def sign_in():
 
     match = user.password == password
     if match:
-        result = login_user(user)
+        result = login_user(user, remember=True)
         user_schema = UserSchema(only=("id","username", "nickname"))
         return  jsonify(user_schema.dump(user).data)
     else:
